@@ -111,6 +111,8 @@ export type Props = {
     but want to avoid graphical issues.
    */
   closeMenuOnScroll: boolean | EventListener,
+  /* Target to scroll component */
+  scrollElementTarget?: Document | HTMLElement,
   /*
     This complex object includes all the compositional components that are used
     in `react-select`. If you wish to overwrite a component, pass in an object
@@ -252,6 +254,7 @@ export const defaultProps = {
   captureMenuScroll: !isTouchCapable(),
   closeMenuOnSelect: true,
   closeMenuOnScroll: false,
+  scrollElementTarget: document,
   components: {},
   controlShouldRenderValue: true,
   escapeClearsValue: false,
@@ -375,15 +378,17 @@ export default class Select extends Component<Props, State> {
     this.state.selectValue = selectValue;
   }
   componentDidMount() {
+    const { closeMenuOnScroll, scrollElementTarget, autoFocus } = this.props;
+
     this.startListeningComposition();
     this.startListeningToTouch();
 
-    if (this.props.closeMenuOnScroll && document && document.addEventListener) {
+    if (closeMenuOnScroll && scrollElementTarget && scrollElementTarget.addEventListener) {
       // Listen to all scroll events, and filter them out inside of 'onScroll'
-      document.addEventListener('scroll', this.onScroll, true);
+      scrollElementTarget.addEventListener('scroll', this.onScroll, true);
     }
 
-    if (this.props.autoFocus) {
+    if (autoFocus) {
       this.focusInput();
     }
   }
@@ -437,7 +442,12 @@ export default class Select extends Component<Props, State> {
   componentWillUnmount() {
     this.stopListeningComposition();
     this.stopListeningToTouch();
-    document.removeEventListener('scroll', this.onScroll, true);
+
+    const { scrollElementTarget } = this.props;
+
+    if (scrollElementTarget && scrollElementTarget.removeEventListener) {
+      scrollElementTarget.removeEventListener('scroll', this.onScroll, true);
+    }
   }
   cacheComponents = (components: SelectComponents) => {
     this.components = defaultComponents({ components });
